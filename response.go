@@ -2,9 +2,9 @@ package main
 
 type Response struct {
 	//{"em":"", "ec":"", "data":""}
-	Em   string `json:"em"`
-	Ec   int    `json:"ec"`
-	Data string `json:"data"`
+	Em   string      `json:"em"`
+	Ec   int         `json:"ec"`
+	Data interface{} `json:"data"`
 }
 
 func NewResponse() Response {

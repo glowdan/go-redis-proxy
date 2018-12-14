@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-redis/redis"
 	"strings"
@@ -44,15 +45,35 @@ func (p RedisCommon) getClient() redis.Client {
 
 }
 
-func RedisAction(action, argumentStr string) (string, error) {
+func RedisAction(action, argumentStr string) (interface{}, error) {
 
 	switch strings.ToUpper(action) {
+	case "DEL":
+		return redisDel(argumentStr)
 	case "GET":
 		return redisGet(argumentStr)
 	case "SET":
 		return redisSet(argumentStr)
+	case "INCR":
+		return redisIncr(argumentStr)
+	case "HGETALL":
+		return redisHgetall(argumentStr)
 	}
-	return "", nil
+	return "", errors.New("Unsupported command ")
+}
+
+func redisDel(argument string) (int64, error) {
+	var p RedisGet
+	err := json.Unmarshal([]byte(argument), &p)
+
+	if err != nil {
+		return 0, err
+	}
+	redisClient := p.getClient()
+
+	keys := strings.Split(p.Key, " ")
+
+	return redisClient.Del(keys...).Result()
 }
 
 func redisGet(argument string) (string, error) {
@@ -75,4 +96,26 @@ func redisSet(argument string) (string, error) {
 	}
 	redisClient := p.getClient()
 	return redisClient.Set(p.Key, p.Value, time.Duration(p.Expiration)).Result()
+}
+
+func redisIncr(argument string) (int64, error) {
+	var p RedisGet
+	err := json.Unmarshal([]byte(argument), &p)
+
+	if err != nil {
+		return 0, err
+	}
+	redisClient := p.getClient()
+	return redisClient.Incr(p.Key).Result()
+}
+
+func redisHgetall(argument string) (map[string]string, error) {
+	var p RedisGet
+	err := json.Unmarshal([]byte(argument), &p)
+
+	if err != nil {
+		return nil, err
+	}
+	redisClient := p.getClient()
+	return redisClient.HGetAll(p.Key).Result()
 }

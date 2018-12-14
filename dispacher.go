@@ -11,10 +11,12 @@ func dispacher(request Request) (Response, error) {
 		data, err := RedisAction(request.Action, request.Args)
 		if err != nil {
 			fmt.Println(err)
+			response.Em = err.Error()
+			response.Ec = 400
 		}
 		response.Data = data
 		return response, nil
 	}
 
-	return Response{}, nil
+	return Response{Ec: 405, Em: "Unsupported method ", Data: ""}, nil
 }

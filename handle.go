@@ -10,6 +10,19 @@ type MyHandler struct {
 	redisServer.DefaultHandler
 }
 
+func DefaultConfig() *redisServer.Config {
+	config := &redisServer.Config{}
+	if 1 == 0 {
+		config.Proto("unix")
+	} else {
+		config.Proto("tcp")
+		config.Host("127.0.0.1")
+		config.Port(6389)
+	}
+	config.Handler(&MyHandler{})
+	return config
+}
+
 //Request {"id":"4","method":"1","action":"2","args":"3"}
 // Get override the DefaultHandler's method.
 func (h *MyHandler) Get(key string) ([]byte, error) {
