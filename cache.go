@@ -87,10 +87,42 @@ func cacheDel(arg string) (string, error) {
 	return "", nil
 }
 
-func cacheIncr(arg string) (string, error) {
-
+func cacheIncr(arg string) (int64, error) {
+	var ic IntCache
+	err := json.Unmarshal([]byte(arg), &ic)
+	if err != nil {
+		return 0, err
+	}
+	if ic.Key == "" {
+		return 0, errors.New("Key is empty ")
+	}
+	err = c.Increment(ic.Key, ic.Step)
+	if err != nil {
+		return 0, err
+	}
+	foo, found := c.Get(ic.Key)
+	if found {
+		return foo.(int64), nil
+	}
+	return 0, errors.New("Not Found ")
 }
 
-func cacheDecr(arg string) (string, error) {
-
+func cacheDecr(arg string) (int64, error) {
+	var ic IntCache
+	err := json.Unmarshal([]byte(arg), &ic)
+	if err != nil {
+		return 0, err
+	}
+	if ic.Key == "" {
+		return 0, errors.New("Key is empty ")
+	}
+	err = c.Decrement(ic.Key, ic.Step)
+	if err != nil {
+		return 0, err
+	}
+	foo, found := c.Get(ic.Key)
+	if found {
+		return foo.(int64), nil
+	}
+	return 0, errors.New("Not Found ")
 }
