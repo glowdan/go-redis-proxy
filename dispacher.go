@@ -1,22 +1,33 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"log"
+)
 
 func dispacher(request Request) (Response, error) {
-
+	var response = NewResponse()
+	var data interface{}
+	var err error
+	ec := 0
 	switch request.Method {
 	case "redis":
-		var response = NewResponse()
-
-		data, err := RedisAction(request.Action, request.Args)
-		if err != nil {
-			fmt.Println(err)
-			response.Em = err.Error()
-			response.Ec = 400
-		}
-		response.Data = data
-		return response, nil
+		data, err = RedisAction(request.Action, request.Args)
+	case "cache":
+		data, err = CacheAction(request.Action, request.Args)
+	default:
+		err = errors.New("Unsupported method ")
+		data = ""
+		ec = 405
 	}
-
-	return Response{Ec: 405, Em: "Unsupported method ", Data: ""}, nil
+	if err != nil {
+		log.Printf("id: %s,error: %v", request.Id, err)
+		response.Em = err.Error()
+		if ec == 0 {
+			ec = 400
+		}
+		response.Ec = ec
+	}
+	response.Data = data
+	return response, nil
 }
