@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/patrickmn/go-cache"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -15,8 +15,8 @@ type BaseCache struct {
 
 type SetCache struct {
 	BaseCache
-	Value  string `json:"value"`
-	Expire int64  `json:"expire"`
+	Value  interface{} `json:"value"`
+	Expire int64       `json:"expire"`
 }
 
 type IntCache struct {
@@ -48,7 +48,7 @@ func CacheAction(action, argumentStr string) (interface{}, error) {
 
 }
 
-func cacheGet(arg string) (string, error) {
+func cacheGet(arg string) (interface{}, error) {
 	var bc BaseCache
 	err := json.Unmarshal([]byte(arg), &bc)
 	if err != nil {
@@ -56,7 +56,7 @@ func cacheGet(arg string) (string, error) {
 	}
 	foo, found := c.Get(bc.Key)
 	if found {
-		return fmt.Sprintf("%s", foo), nil
+		return foo, nil
 	}
 	return "", errors.New("Not Found ")
 }
@@ -87,7 +87,7 @@ func cacheDel(arg string) (string, error) {
 	return "", nil
 }
 
-func cacheIncr(arg string) (int64, error) {
+func cacheIncr(arg string) (interface{}, error) {
 	var ic IntCache
 	err := json.Unmarshal([]byte(arg), &ic)
 	if err != nil {
@@ -96,13 +96,17 @@ func cacheIncr(arg string) (int64, error) {
 	if ic.Key == "" {
 		return 0, errors.New("Key is empty ")
 	}
+	mu := sync.RWMutex{}
+	mu.Lock()
 	err = c.Increment(ic.Key, ic.Step)
 	if err != nil {
-		return 0, err
+		mu.Unlock()
+		c.Set(ic.Key, ic.Step, -1)
 	}
 	foo, found := c.Get(ic.Key)
+	mu.Unlock()
 	if found {
-		return foo.(int64), nil
+		return foo, nil
 	}
 	return 0, errors.New("Not Found ")
 }
